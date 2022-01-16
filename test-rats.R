@@ -1,0 +1,8 @@
+library(rstan)
+y <- as.matrix(read.table('https://raw.github.com/wiki/stan-dev/rstan/rats.txt', header = TRUE))
+x <- c(8, 15, 22, 29, 36)
+xbar <- mean(x)
+N <- nrow(y)
+Tr <- ncol(y)
+rats_fit <- stan(file='test-rats.stan', data = list(N=N, T=Tr, y=y, x=x, xbar=xbar))
+pairs(rats_fit)

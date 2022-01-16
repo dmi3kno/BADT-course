@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Bayesian Analysis and Decision Theory (BADT)</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dmytro Perepolkin" />
+    <meta name="date" content="2022-01-16" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/tile-view/tile-view.css" rel="stylesheet" />
+    <script src="libs/tile-view/tile-view.js"></script>
+    <link href="libs/animate.css/animate.xaringan.css" rel="stylesheet" />
+    <link href="libs/tachyons/tachyons.min.css" rel="stylesheet" />
+    <link href="libs/panelset/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset/panelset.js"></script>
+    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"cebc5ea4537c40128c1a6e997a9da76a","expires":14}</script>
+    <script src="libs/himalaya/himalaya.js"></script>
+    <script src="libs/js-cookie/js.cookie.js"></script>
+    <link href="libs/editable/editable.css" rel="stylesheet" />
+    <script src="libs/editable/editable.js"></script>
+    <link href="libs/xaringanExtra-extra-styles/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+&lt;style type="text/css"&gt;
+.title-slide .remark-slide-number {
+  display: none;
+}
+&lt;/style&gt;
+
+
+
+<div>
+<style type="text/css">.xaringan-extra-logo {
+width: 110px;
+height: 128px;
+z-index: 0;
+background-image: url(fig/bl_logo.png);
+background-size: contain;
+background-repeat: no-repeat;
+position: absolute;
+top:2em;right:2em;
+}
+</style>
+<script>(function () {
+  let tries = 0
+  function addLogo () {
+    if (typeof slideshow === 'undefined') {
+      tries += 1
+      if (tries < 10) {
+        setTimeout(addLogo, 100)
+      }
+    } else {
+      document.querySelectorAll('.remark-slide-content:not(.title-slide):not(.inverse):not(.hide_logo)')
+        .forEach(function (slide) {
+          const logo = document.createElement('a')
+          logo.classList = 'xaringan-extra-logo'
+          logo.href = 'https://www.lucs.lu.se/bayes/'
+          slide.appendChild(logo)
+        })
+    }
+  }
+  document.addEventListener('DOMContentLoaded', addLogo)
+})()</script>
+</div>
+
+
+
+
+.h1.f-headline.fw1[
+Bayesian Analysis
+]
+
+.h2.f-subheadline.lh-title[
+and Decision Theory
+]
+&lt;br&gt;&lt;br&gt;
+.h1.f1.lh-title[
+NAMV005
+]
+&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;
+.f3.lh-title[
+Lund 2022
+]
+---
+# Course content
+
+|Topic|Format| Date |
+|-----|------|------|
+| Introduction to Bayesian inference and subjective probability &lt;br&gt; Conjugate models| Review &lt;br&gt; Lecture | 17 Jan 2022 |
+| Conjugate models (review and exercises) &lt;br&gt; Modern Bayesian analysis with MCMC | Review &lt;br&gt; Lecture | 24 Jan 2022 |
+| Modern Bayesian analysis with MCMC (review and exercises) &lt;br&gt; Hierarchical models | Review &lt;br&gt; Lecture | 31 Jan 2022 |
+| Hierarchical models (review and exercises) &lt;br&gt; Decision theory &lt;br&gt; Literature seminar | Review &lt;br&gt; Lecture &lt;br&gt; Seminar | 07 Feb 2022 |
+
+---
+class: center, middle, inverse
+
+# Models
+
+---
+# Models are tools
+
+McElreath(2020) recites the story of the Golem of Prague
+ - animated by truth [*emet*], but lacking free will 
+ - invented to defend, but decommissioned due to innate danger [*met*]
+ 
+Scientific models are like golems: they do what you tell them to, but only that. They are neither true nor false.
+
+Models are used:
+ - to predict
+   - predictive models (ML)
+   - often relevant in risk/decision context
+ - to understand how the world works
+   - inferential models
+   - means of producing scientific knowledge
+   - study of (causal) effects
+
+Instead of solving the real problem, we are making a practical compromise and being, of necessity, content with an approximate solution (Jaynes 2003).
+
+---
+class: center, middle, inverse
+
+# probability
+
+### /ˌprɒbəˈbɪlɪti 
+
+---
+# Perspectives on probability
+
+Schools of thought on probability&lt;sup&gt;[1]&lt;/sup&gt;:
+- Classical (Laplace, Bayes) - the "set" definition
+
+- Frequentist (Pearson, Fisher, Popper, von Mises) - the "series" definition
+
+- Logical (Keynes, Jeffreys, Jaynes)&lt;sup&gt;[2]&lt;/sup&gt; - the "plausibility" definition
+
+- Subjectivist (de Finetti, Ramsey)&lt;sup&gt;[3]&lt;/sup&gt; - the "opinion" definition
+
+- Knightnian (Knight, the "imprecise probability" school) - the "uncertainty vs risk" definition
+.pull-left[]
+
+.pull-right[
+![](https://upload.wikimedia.org/wikipedia/commons/f/f8/Blind_men_and_elephant3.jpg)
+]
+.footnote[
+[1] Acree (2021)
+[2] Clayton (2021)
+[3] N-E Sahlin (1990)
+]
+---
+# Classical probability
+
+Conditional probability
+&gt;If of the two subsequent events, the probability of the 1st be `\(a/N\)` and the probability of both together be `\(P/N\)`, then the probability of the 2nd on the supposition the 1st happens is `\(P/a\)`.
+`\(P(B|A)=P(A \&amp; B)/P(A)\)`
+
+Bayes, hesitantly, concluded that time does not distinguish between the events and therefore that the relationship between `\(A\)` and `\(B\)` is *not necessarily causal*. `\(P(A|B)P(B)=P(B|A)P(A)\)`
+
+Laplace's law of succession
+&gt; If an urn contains an infinity of white and black tickets in an unknown ratio, and if p + q tickets are drawn of which p are white and q are black, we ask the probability that in drawing a new ticket from this urn it will be white.
+
+Laplace suggested to replace a *single urn* of unknown constitution with an *infinity of urns* of known constitution
+`$$\frac{\int_0^1x^{p+1}(1-x)^qdx}{\int_0^1x^{p}(1-x)^qdx}=\frac{p+1}{p+q+2}$$`
+
+---
+# Frequentist probability
+
+Bernoulli (1655-1705) in *Ars Conjectandi*:
+If you take a **large enough sample**, you can be **sure**, that the proportion of white pebbles you observe in the sample is **close** to the proportion in the urn (Law of Large Numbers).
+&gt; "The sample ratio is close to a *given urn ratio* with a high probability" vs "The urn ratio is close to a *given sample ratio* with high probability."
+
+
+.pull-left[
+- Fascination with the normal curve and deviations from average (Adolphe Quetelet)
+- Galton's natural selection and eugenics. Reversion (or *regression*) towards mediocrity in hereditary studies
+- Pearson - numerical measure of normality `\(\chi^2\)`.
+- Young genius Fischer. Break-off. Animosity and hostility. Fischer's continuous war with Egon Pearson and Jerzy Nyman.
+]
+.footnote[
+[1] Clayton (2021) [2] Acree (2021)
+]
+
+.pull-right[
+### Key inherited concepts
+- Random variable
+- Standard deviation, variance
+- Correlation, regression
+- [Unbiased/consistent/efficient/etc] estimator
+- Significance testing, p-value, confidence interval
+- Multiple tests for various situations
+]
+---
+# Logical probability
+
+- Inference is an extension of Boolean algebra with an implication operator `\(A\implies B\)` ("A implies B").
+- Implication does not assert that either `\(A\)` or `\(B\)` is true, but merely that `\(A\overline{B}\)` is FALSE, i.e. that `\((\overline{A}+B)\)` is TRUE. Also can be expressed as `\(A=AB\)`: propositions `\(A\)` and `\(AB\)` have the same truth value.
+
+Desiderata for plausibility reasoning:
+
+- Representation of degrees of plausibility by real numbers;
+- Qualitative correspondence with common sense;
+- Consistency: 
+  - If a conclusion can be reasoned out in more than one way, then every possible way must lead to the same result
+  - The robot always takes into account all of the evidence it has
+relevant to a question. [...] the robot is completely nonideological.
+  - The robot always represents equivalent states of knowledge by
+equivalent plausibility assignments.
+
+Randomization does not change the state of the world. It alters our knowledge. Mind-projection fallacy.
+.footnote[
+[1] Jaynes(2003)
+]
+---
+# Logical probability
+### Rules of plausibility reasoning
+
+ - The product rule
+ `$$p(AB|C)=p(A|C)p(B|AC)=p(B|C)p(A|BC)$$`
+ - The sum rule 
+`$$p(A|B)+p(\overline{A}|B)=1\\p(A+B|C)=p(A|C)+p(B|C)-p(AB|C)$$`
+
+Interpretation of plausibility
+.pull-left[
+.center[
+`\(A \implies B\)`
+]]
+.pull-right[
+- `\(B\)` is true, therefore `\(A\)` becomes more plausible
+- `\(A\)` is false, therefore `\(B\)` becomes less plausible
+]
+
+.footnote[
+[1] Jaynes (2003)
+]
+---
+# Subjectivist probability
+
+Beliefs without actions are abstract. Probabilities can be understood only in the context of an agent.
+
+#### Bruno de Finetti (1906-1985)
+
+- "PROBABILITY DOES NOT EXIST!"
+- Interpretation of probability as personal attitude to uncertainty is inseparable from willingness to take risk
+- Unexperienced uncertainty (nothing at stake) is not a real uncertainty
+- Uncertainty can *only* be observed (and probabilities can be extracted) from betting behavior
+
+#### Frank Ramsey (1903-1930)&lt;sup&gt;[1]&lt;/sup&gt;
+- Probabilities are subjective. Both prior beliefs and previously experienced frequencies are relevant for decision
+- Beliefs can be separated from preferences through the definition of "ethically neutral proposition" (uninfluenced decision)
+
+.footnote[
+[1]N-E Sahlin
+]
+---
+# Knightian probability
+
+Known unknowns are not the same as unknown unknowns
+
+Knight (1921):
+- risk - inherent randomness in the world
+- uncertainty - lack of knowledge
+  
+Imprecise probability:
+- What to do when one can not assign a single probability number?
+- Probability represented by intervals without any distribution assigned to them (NOT uniform!)
+
+Bayesian approach to imprecise probability
+- Sets of priors
+- Propagate (carry on) "the uncertainty" through your analysis and communicate it to the decision maker.
+
+---
+# Time to reflect
+
+1. How can different interpretations of probability affect scientist's epistemology?
+
+1. Which perspectives on probability have you encountered in you research experience?
+---
+
+class: middle, inverse
+
+# Bayesian data analysis:
+
+.f2.lh-title[For each possible explanation of the data
+
+Count all the ways the data can happen
+
+Explanations with more ways to produce data are more plausible
+]
+McElreath(2020)
+---
+# Bayesian data analysis
+
+
+
+
+.f1[<svg aria-hidden="true" role="img" viewBox="0 0 448 512" style="height:1em;width:0.88em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"><path d="M352 160v-32C352 57.42 294.579 0 224 0 153.42 0 96 57.42 96 128v32H0v272c0 44.183 35.817 80 80 80h288c44.183 0 80-35.817 80-80V160h-96zm-192-32c0-35.29 28.71-64 64-64s64 28.71 64 64v32H160v-32zm160 120c-13.255 0-24-10.745-24-24s10.745-24 24-24 24 10.745 24 24-10.745 24-24 24zm-192 0c-13.255 0-24-10.745-24-24s10.745-24 24-24 24 10.745 24 24-10.745 24-24 24z"/></svg> with 4 blue or white marbles] 
+
+
+.pull-left[
+## Possibilities 
+.f3[1) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[2) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[3) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[4) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[5) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt;]
+]
+
+.pull-left[
+## Observables
+.f3[&lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt;]
+
+For each of the (bag composition) possibilities, how many ways could we observe the data at hand [&lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt;]
+
+Possibility 1 &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; is impossible. The bag can not consist of white marbles only
+
+How about possibility 2 &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;?
+]
+---
+background-image: url(fig/garden-forking-data.png)
+background-position: bottom
+background-size: 80%
+
+# Possibility 2 &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;
+
+Three "rounds" of marbles represent three draws. There's total of 3 ways to see the [&lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt;] if the bag contains &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;
+
+---
+# Garden of forking data
+
+
+.pull-left[
+### Possibile &lt;br&gt;contents
+.f3[1) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[2) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[3) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[4) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;]
+
+.f3[5) &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt;]
+]
+
+.pull-right[
+### Ways to produce &lt;br&gt; [&lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt; &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/&gt;&lt;/svg&gt;]       
+.f3[0    =&gt; 0/20 = 0]
+
+.f3[3    =&gt; 3/20 = 0.15]
+
+.f3[8    =&gt; 8/20 = 0.4]
+
+.f3[9    =&gt; 9/20 = 0.45]
+
+.f3[0    =&gt; 0/20 = 0]
+]
+
+
+
+
+```r
+ways &lt;- c(0,3,8,9,0)
+ways/sum(ways)
+```
+
+```
+## [1] 0.00 0.15 0.40 0.45 0.00
+```
+---
+# Time for reflection
+
+1. Let's say we pull another marble from the bag and it is &lt;svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:#2a3990;overflow:visible;position:relative;"&gt;&lt;path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200z"/&gt;&lt;/svg&gt;. How could we update the analysis?
+
+2. Which content is more plausible now?
+
+&lt;details closed&gt;
+&lt;summary&gt; &lt;span title='Click to Open'&gt; Solution &lt;/span&gt; &lt;/summary&gt;
+
+```r
+ways_w &lt;- c(4,3,2,1,0)
+ways &lt;- ways * ways_w
+ways/sum(ways)
+```
+
+```
+## [1] 0.0000000 0.2647059 0.4705882 0.2647059
+## [5] 0.0000000
+```
+&lt;/details&gt;
+&lt;br&gt;
+---
+
+#Rules of Bayesian updating
+.f4[
+1. State a causal model for how the observations arise, given each possible explanation
+2. Count ways data could arise for each explanation
+3. Relative plausibility is relative value from step (2) above
+]
+
+
+## Globe tossing
+.pull-left[
+.f4[
+1. For each possible **proportion of water**,&lt;br&gt;
+1. Count number of ways data could happen. &lt;br&gt;
+1. Must state how observations are generated &lt;br&gt; 
+]
+]
+.pull-right[
+.f2[W, L, W, W, W, L, W, L, W]
+]
+---
+# Globe tossing
+
+
+```r
+library(tidyverse)
+toss = c("w", "l", "w", "w" , "w", "l", "w", "l", "w")
+toss_df &lt;- tibble(toss=toss) %&gt;% 
+           mutate(n_trials  = seq(n()),
+                  n_success = cumsum(toss == "w"))
+```
+.pull-left[
+
+```r
+i &lt;- 9 # how many trials to include
+ntrials &lt;- toss_df$n_trials[i]
+nsuccess &lt;- toss_df$n_success[i]
+ggplot()+
+  geom_function(fun=dbinom, 
+                args=list(x=nsuccess, 
+                          size=ntrials))+
+  theme_minimal()+
+  xlim(0,1)
+```
+&lt;br&gt;
+**Question:** 
+How can we visualize prior belief(prior to any observations)? 
+]
+.pull-right[
+![](01-BADT-introduction_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+]
+---
+# Globe tossing 
+.pull-left[
+![](01-BADT-introduction_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+]
+.pull-right[
+### Binomial distribution
+https://en.wikipedia.org/wiki/Binomial_distribution
+
+Look for density (PDF/PMF)
+
+`$$f(x|n,p)=\binom{n}{p}p^kq^{n-k}$$`
+
+```r
+(m_plaus &lt;- choose(9,6)*p_grid^6*
+                       (1-p_grid)^(9-6))
+plot(x=p_grid,y=m_plaus, type = "l")
+```
+
+```r
+m_plaus1 &lt;- dbinom(x=6,size=9,prob=p_grid)
+plot(x=p_grid,y=m_plaus1, type = "l")
+```
+
+```r
+all.equal(m_plaus, m_plaus1)
+```
+]
+
+---
+# A model
+
+$$
+`\begin{aligned}
+w &amp;\sim Binomial (n,p) \\
+n &amp;=w+l\\
+p &amp;\sim Uniform(0,1)
+\end{aligned}`
+$$
+Parameters: p, the proportion of water on the glove. Lookup the Uniform density function.
+
+## Bayesian updating
+`$$Pr(p|W;L)=\frac{Pr(W;L|p)Pr(p)}{Pr(W;L)}$$`
+Repeat after me:
+1. For each possible **proportion of water** `\(p\)`,&lt;br&gt;
+1. Count number of ways data could happen; `\(Pr(W;L|p)Pr(p)\)` &lt;br&gt;
+1. Must state how observations are generated &lt;br&gt; 
+
+Relative sizes of products in (2) are the posterior probabilities
+---
+# Grid approximation
+
+```r
+n &lt;- 3
+p_grid &lt;- seq(0,1, length.out=n)
+prob_p &lt;- rep(1, n)
+
+prob_data &lt;- dbinom(6, size=9, prob = p_grid)
+posterior &lt;- prob_data*prob_p
+# normalize the relative plausibilities
+posterior &lt;- posterior/sum(posterior)
+```
+
+**Question:**
+1. Inspect each vector with `str`
+2. Plot each vector with `plot(...)`. Use `type="l"` for the line plot
+3. Increase the size of the grid to 1e5. Repeat 1-2. 
+4. Replace the prior with `\(Beta(3,1)\)`. Compare the posteriors.
+
+---
+# Predictive distribution
+
+We can sample from the posterior with
+
+
+```r
+p_samples &lt;- sample(p_grid, prob=posterior, size=1e3, replace=TRUE)
+```
+
+And use the samples to predict new observations
+
+```r
+pred_w &lt;- rbinom(1e4, size=9, prob=p_samples)
+```
+
+**Question:**
+1. How many observations are in the `pred_w` vector. Why?
+1. Compute median, mean, a number of quantiles and report a 95% credible interval for the estimate of water samples (spotting on the globe).
+.f3[
+&gt;Probability theory is a method of
+logically deducing implications
+of data under assumptions that
+you must choose. Any framework selling you more
+is hiding assumptions
+&gt; -- Richard McElreath
+]
+
+---
+class: center, middle, inverse
+
+# Hands-on with R/Stan
+
+---
+# References
+
+Acree MC. 2021. The Myth of Statistical Inference [Internet]. Cham: Springer International Publishing; [accessed 2022 Jan 6]. https://doi.org/10.1007/978-3-030-73257-8
+
+Clayton A. 2021. Bernoulli’s fallacy: statistical illogic and the crisis of modern science. New York: Columbia University Press.
+
+McElreath R. 2020. Statistical Rethinking: A Bayesian Course with Examples in R and Stan [Internet]. 2nd ed. New York, NY: Chapman and Hall/CRC; [accessed 2020 May 3]. https://doi.org/10.1201/9780429029608
+
+Sahlin N-E. 1990. The philosophy of FP Ramsey. [place unknown]: Cambridge University Press.
+
+
+
+
+
+---
+
+class: center, middle
+
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](https://yihui.org/knitr/), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="libs/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"slideNumberFormat": "%current%",
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

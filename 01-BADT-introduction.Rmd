@@ -1,0 +1,574 @@
+---
+title: "Bayesian Analysis and Decision Theory (BADT)" # not visible
+subtitle: "Session 1"
+author: "Dmytro Perepolkin"
+institute: "Lund University"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    chakra: libs/remark-latest.min.js
+    css: xaringan-themer.css
+    seal: false
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      slideNumberFormat: "%current%"
+      ratio: '16:9'
+---
+
+```{css, echo = FALSE}
+.title-slide .remark-slide-number {
+  display: none;
+}
+```
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(RefManageR)
+library(fontawesome)
+library(tidyverse)
+library(details)
+```
+
+```{r xaringan-extra-all-the-things, echo=FALSE}
+library(xaringanExtra)
+xaringanExtra::use_xaringan_extra(
+  c("tile_view", "panelset", "editable", 
+    "animate", "tachyons")
+)
+
+xaringanExtra::use_tachyons()
+
+xaringanExtra::use_extra_styles(
+  hover_code_line = TRUE,         #<<
+  mute_unhighlighted_code = TRUE  #<<
+)
+
+xaringanExtra::use_logo("fig/bl_logo.png",
+                        link_url = "https://www.lucs.lu.se/bayes/",
+                        position=css_position(top = "2em", right = "2em"))
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(base_color = "#2a3990",
+  header_font_google = google_font("Josefin Sans"),
+  text_font_google   = google_font("Montserrat", "300", "300i"),
+  code_font_google   = google_font("Fira Mono")
+)
+```
+
+
+.h1.f-headline.fw1[
+Bayesian Analysis
+]
+
+.h2.f-subheadline.lh-title[
+and Decision Theory
+]
+<br><br>
+.h1.f1.lh-title[
+NAMV005
+]
+<br><br><br><br><br>
+.f3.lh-title[
+Lund 2022
+]
+---
+# Course content
+
+|Topic|Format| Date |
+|-----|------|------|
+| Introduction to Bayesian inference and subjective probability <br> Conjugate models| Review <br> Lecture | 17 Jan 2022 |
+| Conjugate models (review and exercises) <br> Modern Bayesian analysis with MCMC | Review <br> Lecture | 24 Jan 2022 |
+| Modern Bayesian analysis with MCMC (review and exercises) <br> Hierarchical models | Review <br> Lecture | 31 Jan 2022 |
+| Hierarchical models (review and exercises) <br> Decision theory <br> Literature seminar | Review <br> Lecture <br> Seminar | 07 Feb 2022 |
+
+---
+class: center, middle, inverse
+
+# Models
+
+---
+# Models are tools
+
+McElreath(2020) recites the story of the Golem of Prague
+ - animated by truth [*emet*], but lacking free will 
+ - invented to defend, but decommissioned due to innate danger [*met*]
+ 
+Scientific models are like golems: they do what you tell them to, but only that. They are neither true nor false.
+
+Models are used:
+ - to predict
+   - predictive models (ML)
+   - often relevant in risk/decision context
+ - to understand how the world works
+   - inferential models
+   - means of producing scientific knowledge
+   - study of (causal) effects
+
+Instead of solving the real problem, we are making a practical compromise and being, of necessity, content with an approximate solution (Jaynes 2003).
+
+---
+class: center, middle, inverse
+
+# probability
+
+### /ˌprɒbəˈbɪlɪti 
+
+---
+# Perspectives on probability
+
+Schools of thought on probability<sup>[1]</sup>:
+- Classical (Laplace, Bayes) - the "set" definition
+
+- Frequentist (Pearson, Fisher, Popper, von Mises) - the "series" definition
+
+- Logical (Keynes, Jeffreys, Jaynes)<sup>[2]</sup> - the "plausibility" definition
+
+- Subjectivist (de Finetti, Ramsey)<sup>[3]</sup> - the "opinion" definition
+
+- Knightnian (Knight, the "imprecise probability" school) - the "uncertainty vs risk" definition
+.pull-left[]
+
+.pull-right[
+![](https://upload.wikimedia.org/wikipedia/commons/f/f8/Blind_men_and_elephant3.jpg)
+]
+.footnote[
+[1] Acree (2021)
+[2] Clayton (2021)
+[3] N-E Sahlin (1990)
+]
+---
+# Classical probability
+
+Conditional probability
+>If of the two subsequent events, the probability of the 1st be $a/N$ and the probability of both together be $P/N$, then the probability of the 2nd on the supposition the 1st happens is $P/a$.
+$P(B|A)=P(A \& B)/P(A)$
+
+Bayes, hesitantly, concluded that time does not distinguish between the events and therefore that the relationship between $A$ and $B$ is *not necessarily causal*. $P(A|B)P(B)=P(B|A)P(A)$
+
+Laplace's law of succession
+> If an urn contains an infinity of white and black tickets in an unknown ratio, and if p + q tickets are drawn of which p are white and q are black, we ask the probability that in drawing a new ticket from this urn it will be white.
+
+Laplace suggested to replace a *single urn* of unknown constitution with an *infinity of urns* of known constitution
+$$\frac{\int_0^1x^{p+1}(1-x)^qdx}{\int_0^1x^{p}(1-x)^qdx}=\frac{p+1}{p+q+2}$$
+
+---
+# Frequentist probability
+
+Bernoulli (1655-1705) in *Ars Conjectandi*:
+If you take a **large enough sample**, you can be **sure**, that the proportion of white pebbles you observe in the sample is **close** to the proportion in the urn (Law of Large Numbers).
+> "The sample ratio is close to a *given urn ratio* with a high probability" vs "The urn ratio is close to a *given sample ratio* with high probability."
+
+
+.pull-left[
+- Fascination with the normal curve and deviations from average (Adolphe Quetelet)
+- Galton's natural selection and eugenics. Reversion (or *regression*) towards mediocrity in hereditary studies
+- Pearson - numerical measure of normality $\chi^2$.
+- Young genius Fischer. Break-off. Animosity and hostility. Fischer's continuous war with Egon Pearson and Jerzy Nyman.
+]
+.footnote[
+[1] Clayton (2021) [2] Acree (2021)
+]
+
+.pull-right[
+### Key inherited concepts
+- Random variable
+- Standard deviation, variance
+- Correlation, regression
+- [Unbiased/consistent/efficient/etc] estimator
+- Significance testing, p-value, confidence interval
+- Multiple tests for various situations
+]
+---
+# Logical probability
+
+- Inference is an extension of Boolean algebra with an implication operator $A\implies B$ ("A implies B").
+- Implication does not assert that either $A$ or $B$ is true, but merely that $A\overline{B}$ is FALSE, i.e. that $(\overline{A}+B)$ is TRUE. Also can be expressed as $A=AB$: propositions $A$ and $AB$ have the same truth value.
+
+Desiderata for plausibility reasoning:
+
+- Representation of degrees of plausibility by real numbers;
+- Qualitative correspondence with common sense;
+- Consistency: 
+  - If a conclusion can be reasoned out in more than one way, then every possible way must lead to the same result
+  - The robot always takes into account all of the evidence it has
+relevant to a question. [...] the robot is completely nonideological.
+  - The robot always represents equivalent states of knowledge by
+equivalent plausibility assignments.
+
+Randomization does not change the state of the world. It alters our knowledge. Mind-projection fallacy.
+.footnote[
+[1] Jaynes(2003)
+]
+---
+# Logical probability
+### Rules of plausibility reasoning
+
+ - The product rule
+ $$p(AB|C)=p(A|C)p(B|AC)=p(B|C)p(A|BC)$$
+ - The sum rule 
+$$p(A|B)+p(\overline{A}|B)=1\\p(A+B|C)=p(A|C)+p(B|C)-p(AB|C)$$
+
+Interpretation of plausibility
+.pull-left[
+.center[
+$A \implies B$
+]]
+.pull-right[
+- $B$ is true, therefore $A$ becomes more plausible
+- $A$ is false, therefore $B$ becomes less plausible
+]
+
+.footnote[
+[1] Jaynes (2003)
+]
+---
+# Subjectivist probability
+
+Beliefs without actions are abstract. Probabilities can be understood only in the context of an agent.
+
+#### Bruno de Finetti (1906-1985)
+
+- "PROBABILITY DOES NOT EXIST!"
+- Interpretation of probability as personal attitude to uncertainty is inseparable from willingness to take risk
+- Unexperienced uncertainty (nothing at stake) is not a real uncertainty
+- Uncertainty can *only* be observed (and probabilities can be extracted) from betting behavior
+
+#### Frank Ramsey (1903-1930)<sup>[1]</sup>
+- Probabilities are subjective. Both prior beliefs and previously experienced frequencies are relevant for decision
+- Beliefs can be separated from preferences through the definition of "ethically neutral proposition" (uninfluenced decision)
+
+.footnote[
+[1]N-E Sahlin
+]
+---
+# Knightian probability
+
+Known unknowns are not the same as unknown unknowns
+
+Knight (1921):
+- risk - inherent randomness in the world
+- uncertainty - lack of knowledge
+  
+Imprecise probability:
+- What to do when one can not assign a single probability number?
+- Probability represented by intervals without any distribution assigned to them (NOT uniform!)
+
+Bayesian approach to imprecise probability
+- Sets of priors
+- Propagate (carry on) "the uncertainty" through your analysis and communicate it to the decision maker.
+
+---
+# Time to reflect
+
+1. How can different interpretations of probability affect scientist's epistemology?
+
+1. Which perspectives on probability have you encountered in you research experience?
+---
+
+class: middle, inverse
+
+# Bayesian data analysis:
+
+.f2.lh-title[For each possible explanation of the data
+
+Count all the ways the data can happen
+
+Explanations with more ways to produce data are more plausible
+]
+McElreath(2020)
+---
+# Bayesian data analysis
+
+```{r, include=FALSE}
+marbles <- function(x, fill="#2a3990"){
+  x_v <- strsplit(x,"")[[1]]
+  x_f <- factor(x_v, levels = c("b", "w"), labels=c("fas fa-circle", "far fa-circle"))
+  paste0(sapply(x_f, fa, fill=fill), collapse = " ")
+}
+```
+
+
+.f1[`r fa("shopping-bag", fill = "#2a3990")` with 4 blue or white marbles] 
+
+
+.pull-left[
+## Possibilities 
+.f3[1) `r marbles("wwww")`]
+
+.f3[2) `r marbles("bwww")`]
+
+.f3[3) `r marbles("bbww")`]
+
+.f3[4) `r marbles("bbbw")`]
+
+.f3[5) `r marbles("bbbb")`]
+]
+
+.pull-left[
+## Observables
+.f3[`r marbles("bwb")`]
+
+For each of the (bag composition) possibilities, how many ways could we observe the data at hand [`r marbles("bwb")`]
+
+Possibility 1 `r marbles("wwww")` is impossible. The bag can not consist of white marbles only
+
+How about possibility 2 `r marbles("bwww")`?
+]
+---
+background-image: url(fig/garden-forking-data.png)
+background-position: bottom
+background-size: 80%
+
+# Possibility 2 `r marbles("bwww")`
+
+Three "rounds" of marbles represent three draws. There's total of 3 ways to see the [`r marbles("bwb")`] if the bag contains `r marbles("bwww")`
+
+---
+# Garden of forking data
+
+
+.pull-left[
+### Possibile <br>contents
+.f3[1) `r marbles("wwww")`]
+
+.f3[2) `r marbles("bwww")`]
+
+.f3[3) `r marbles("bbww")`]
+
+.f3[4) `r marbles("bbbw")`]
+
+.f3[5) `r marbles("bbbb")`]
+]
+
+.pull-right[
+### Ways to produce <br> [`r marbles("bwb")`]       
+.f3[0    => 0/20 = 0]
+
+.f3[3    => 3/20 = 0.15]
+
+.f3[8    => 8/20 = 0.4]
+
+.f3[9    => 9/20 = 0.45]
+
+.f3[0    => 0/20 = 0]
+]
+
+```{r, eval=FALSE, include=FALSE}
+n <- 4
+possib_m <- sapply(0:4, function(i) 
+  c(rep(1, times=i), rep(0, times=n-i)))
+
+apply(possib_m, 2, function(r) sum(combn(r, 1)))*
+  apply(possib_m, 2, function(r) sum(combn(1-r, 1)))*
+  apply(possib_m, 2, function(r) sum(combn(r, 1)))
+```
+
+```{r}
+ways <- c(0,3,8,9,0)
+ways/sum(ways)
+```
+---
+# Time for reflection
+
+1. Let's say we pull another marble from the bag and it is `r marbles("w")`. How could we update the analysis?
+
+2. Which content is more plausible now?
+
+<details closed>
+<summary> <span title='Click to Open'> Solution </span> </summary>
+```{r}
+ways_w <- c(4,3,2,1,0)
+ways <- ways * ways_w
+ways/sum(ways)
+```
+</details>
+<br>
+---
+
+#Rules of Bayesian updating
+.f4[
+1. State a causal model for how the observations arise, given each possible explanation
+2. Count ways data could arise for each explanation
+3. Relative plausibility is relative value from step (2) above
+]
+
+
+## Globe tossing
+.pull-left[
+.f4[
+1. For each possible **proportion of water**,<br>
+1. Count number of ways data could happen. <br>
+1. Must state how observations are generated <br> 
+]
+]
+.pull-right[
+.f2[W, L, W, W, W, L, W, L, W]
+]
+---
+# Globe tossing
+
+```{r, fig.width=7, fig.height=7, warning=FALSE, error=FALSE, message=FALSE}
+library(tidyverse)
+toss = c("w", "l", "w", "w" , "w", "l", "w", "l", "w")
+toss_df <- tibble(toss=toss) %>% 
+           mutate(n_trials  = seq(n()),
+                  n_success = cumsum(toss == "w"))
+```
+.pull-left[
+```{r globe-toss-graph-code, eval=FALSE}
+i <- 9 # how many trials to include
+ntrials <- toss_df$n_trials[i]
+nsuccess <- toss_df$n_success[i]
+ggplot()+
+  geom_function(fun=dbinom, 
+                args=list(x=nsuccess, 
+                          size=ntrials))+
+  theme_minimal()+
+  xlim(0,1)
+```
+<br>
+**Question:** 
+How can we visualize prior belief(prior to any observations)? 
+]
+.pull-right[
+```{r, ref.label="globe-toss-graph-code", echo=FALSE, fig.width=7, fig.height=4}
+```
+]
+---
+# Globe tossing 
+.pull-left[
+```{r, fig.width=7, fig.height=7, echo=FALSE}
+p_grid <- seq(0,1,length.out=50)
+toss_grid_df <- toss_df %>% 
+         mutate(data = map2(n_trials, n_success, 
+                            ~tibble(p_water=p_grid,
+                                    plaus=dbinom(.y, .x, prob = p_water),                                            n_plaus=plaus/sum(plaus)))
+                ) %>% 
+  unnest(data)
+
+toss_grid_df %>% 
+  ggplot(aes(y=plaus, x=p_water)) +
+  geom_line()+
+  facet_wrap(vars(n_trials), scales = "free_y")+
+  theme_minimal()+
+  theme(axis.text.y = element_blank())
+```
+]
+.pull-right[
+### Binomial distribution
+https://en.wikipedia.org/wiki/Binomial_distribution
+
+Look for density (PDF/PMF)
+
+$$f(x|n,p)=\binom{n}{p}p^kq^{n-k}$$
+```{r, results='hide', fig.show='hide'}
+(m_plaus <- choose(9,6)*p_grid^6*
+                       (1-p_grid)^(9-6))
+plot(x=p_grid,y=m_plaus, type = "l")
+
+m_plaus1 <- dbinom(x=6,size=9,prob=p_grid)
+plot(x=p_grid,y=m_plaus1, type = "l")
+
+all.equal(m_plaus, m_plaus1)
+```
+]
+
+---
+# A model
+
+$$
+\begin{aligned}
+w &\sim Binomial (n,p) \\
+n &=w+l\\
+p &\sim Uniform(0,1)
+\end{aligned}
+$$
+Parameters: p, the proportion of water on the glove. Lookup the Uniform density function.
+
+## Bayesian updating
+$$Pr(p|W;L)=\frac{Pr(W;L|p)Pr(p)}{Pr(W;L)}$$
+Repeat after me:
+1. For each possible **proportion of water** $p$,<br>
+1. Count number of ways data could happen; $Pr(W;L|p)Pr(p)$ <br>
+1. Must state how observations are generated <br> 
+
+Relative sizes of products in (2) are the posterior probabilities
+---
+# Grid approximation
+```{r}
+n <- 3
+p_grid <- seq(0,1, length.out=n)
+prob_p <- rep(1, n)
+
+prob_data <- dbinom(6, size=9, prob = p_grid)
+posterior <- prob_data*prob_p
+# normalize the relative plausibilities
+posterior <- posterior/sum(posterior)
+```
+
+**Question:**
+1. Inspect each vector with `str`
+2. Plot each vector with `plot(...)`. Use `type="l"` for the line plot
+3. Increase the size of the grid to 1e5. Repeat 1-2. 
+4. Replace the prior with $Beta(3,1)$. Compare the posteriors.
+
+---
+# Predictive distribution
+
+We can sample from the posterior with
+
+```{r}
+p_samples <- sample(p_grid, prob=posterior, size=1e3, replace=TRUE)
+```
+
+And use the samples to predict new observations
+```{r}
+pred_w <- rbinom(1e4, size=9, prob=p_samples)
+```
+
+**Question:**
+1. How many observations are in the `pred_w` vector. Why?
+1. Compute median, mean, a number of quantiles and report a 95% credible interval for the estimate of water samples (spotting on the globe).
+.f3[
+>Probability theory is a method of
+logically deducing implications
+of data under assumptions that
+you must choose. Any framework selling you more
+is hiding assumptions
+> -- Richard McElreath
+]
+
+---
+class: center, middle, inverse
+
+# Hands-on with R/Stan
+
+---
+# References
+
+Acree MC. 2021. The Myth of Statistical Inference [Internet]. Cham: Springer International Publishing; [accessed 2022 Jan 6]. https://doi.org/10.1007/978-3-030-73257-8
+
+Clayton A. 2021. Bernoulli’s fallacy: statistical illogic and the crisis of modern science. New York: Columbia University Press.
+
+McElreath R. 2020. Statistical Rethinking: A Bayesian Course with Examples in R and Stan [Internet]. 2nd ed. New York, NY: Chapman and Hall/CRC; [accessed 2020 May 3]. https://doi.org/10.1201/9780429029608
+
+Sahlin N-E. 1990. The philosophy of FP Ramsey. [place unknown]: Cambridge University Press.
+
+
+
+
+
+---
+
+class: center, middle
+
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](https://yihui.org/knitr/), and [R Markdown](https://rmarkdown.rstudio.com).
