@@ -12,7 +12,7 @@
     <link href="libs/tachyons/tachyons.min.css" rel="stylesheet" />
     <link href="libs/panelset/panelset.css" rel="stylesheet" />
     <script src="libs/panelset/panelset.js"></script>
-    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"cebc5ea4537c40128c1a6e997a9da76a","expires":14}</script>
+    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"x7d2cca339fe433dacb647b287bed855","expires":14}</script>
     <script src="libs/himalaya/himalaya.js"></script>
     <script src="libs/js-cookie/js.cookie.js"></script>
     <link href="libs/editable/editable.css" rel="stylesheet" />
@@ -543,11 +543,59 @@ is hiding assumptions
 ]
 
 ---
+# Conjugate models
+
+Wikipedia: Beta distribution https://en.wikipedia.org/wiki/Beta_distribution
+
+When we use Beta prior with Binomial likelihood the posterior is also a Beta distribution. This property is called "conjugacy", introduced by Raiffa &amp; Schlaifer (2000), first edition published in 1961. https://en.wikipedia.org/wiki/Conjugate_prior
+
+**Question**
+
+How would you describe the typical behavior of a `\(Beta(\alpha, \beta)\)` variable `\(\pi\)` when `\(\alpha=\beta\)`?
+
+Using the same options as above, how would you describe the typical behavior of a `\(Beta(\alpha, \beta)\)` variable `\(\pi\)` when `\(\alpha&gt;\beta\)`?
+
+For which model is there greater variability in the plausible values of  `\(\pi\)`, `\(Beta(20,20)\)` or `\(Beta(5,5)\)`?
+
+`$$E(\pi)=\frac{\alpha}{\alpha+\beta} \\ 
+Mode(\pi)=\frac{\alpha-1}{\alpha+\beta-2}\\
+Var(\pi)=\frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)}$$`
+---
+# Comparing to conjugate model solution
+
+For conjugate models posterior hyperparameters can be found in closed form. For Beta-Binomial:
+
+`$$\alpha+\sum_{i=1}^{n} x_{i},\quad \beta+\sum_{i=1}^{n} N_{i}-\sum_{i=1}^{n} x_{i}$$`
+In our globe tossing example we have a single datapoint `\(N=9\)`, `\(x=6\)`. Therefore if our prior is `\(Beta(3,1)\)` the posterior should be `\(Beta(3+6, 1+9-6)\)` or `\(Beta(9,4)\)`. Lets compare it to grid-approximated solution.
+.pull-left[
+
+```r
+n &lt;- 1e2
+p_grid &lt;- seq(0,1, length.out=n)
+prob_p &lt;- dbeta(p_grid,3,1)
+
+prob_data &lt;- dbinom(6, size=9, prob = p_grid)
+posterior &lt;- prob_data*prob_p
+posterior &lt;- posterior/sum(posterior)
+
+posterior_a &lt;- dbeta(p_grid, 9, 4)
+posterior_a &lt;- posterior_a/sum(posterior_a)
+
+plot(p_grid, posterior, type="l")
+lines(p_grid, posterior_a, lty=2, lwd=2, col="firebrick")
+```
+]
+.pull-right[
+![](01-BADT-introduction_files/figure-html/beta-conj-run-1.png)&lt;!-- --&gt;
+]
+
+---
 class: center, middle, inverse
 
 # Hands-on with R/Stan
 
 ---
+
 # References
 
 Acree MC. 2021. The Myth of Statistical Inference [Internet]. Cham: Springer International Publishing; [accessed 2022 Jan 6]. https://doi.org/10.1007/978-3-030-73257-8
@@ -555,6 +603,8 @@ Acree MC. 2021. The Myth of Statistical Inference [Internet]. Cham: Springer Int
 Clayton A. 2021. Bernoulli’s fallacy: statistical illogic and the crisis of modern science. New York: Columbia University Press.
 
 McElreath R. 2020. Statistical Rethinking: A Bayesian Course with Examples in R and Stan [Internet]. 2nd ed. New York, NY: Chapman and Hall/CRC; [accessed 2020 May 3]. https://doi.org/10.1201/9780429029608
+
+Raiffa H, Schlaifer R. 2000. Applied statistical decision theory. Wiley classics library ed. New York: Wiley.
 
 Sahlin N-E. 1990. The philosophy of FP Ramsey. [place unknown]: Cambridge University Press.
 
