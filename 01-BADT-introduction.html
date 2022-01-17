@@ -4,7 +4,7 @@
     <title>Bayesian Analysis and Decision Theory (BADT)</title>
     <meta charset="utf-8" />
     <meta name="author" content="Dmytro Perepolkin" />
-    <meta name="date" content="2022-01-16" />
+    <meta name="date" content="2022-01-17" />
     <script src="libs/header-attrs/header-attrs.js"></script>
     <link href="libs/tile-view/tile-view.css" rel="stylesheet" />
     <script src="libs/tile-view/tile-view.js"></script>
@@ -12,7 +12,7 @@
     <link href="libs/tachyons/tachyons.min.css" rel="stylesheet" />
     <link href="libs/panelset/panelset.css" rel="stylesheet" />
     <script src="libs/panelset/panelset.js"></script>
-    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"x7d2cca339fe433dacb647b287bed855","expires":14}</script>
+    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"e9600a6fcc3344c89e7f3b640b22e176","expires":14}</script>
     <script src="libs/himalaya/himalaya.js"></script>
     <script src="libs/js-cookie/js.cookie.js"></script>
     <link href="libs/editable/editable.css" rel="stylesheet" />
@@ -388,8 +388,7 @@ ways/sum(ways)
 ```
 
 ```
-## [1] 0.0000000 0.2647059 0.4705882 0.2647059
-## [5] 0.0000000
+## [1] 0.0000000 0.2647059 0.4705882 0.2647059 0.0000000
 ```
 &lt;/details&gt;
 &lt;br&gt;
@@ -459,6 +458,7 @@ Look for density (PDF/PMF)
 `$$f(x|n,p)=\binom{n}{p}p^kq^{n-k}$$`
 
 ```r
+p_grid &lt;- seq(0,1,length.out=50)
 (m_plaus &lt;- choose(9,6)*p_grid^6*
                        (1-p_grid)^(9-6))
 plot(x=p_grid,y=m_plaus, type = "l")

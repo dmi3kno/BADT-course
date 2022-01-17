@@ -467,13 +467,13 @@ Look for density (PDF/PMF)
 
 $$f(x|n,p)=\binom{n}{p}p^kq^{n-k}$$
 ```{r, results='hide', fig.show='hide'}
+p_grid <- seq(0,1,length.out=50)
 (m_plaus <- choose(9,6)*p_grid^6*
                        (1-p_grid)^(9-6))
 plot(x=p_grid,y=m_plaus, type = "l")
 
 m_plaus1 <- dbinom(x=6,size=9,prob=p_grid)
 plot(x=p_grid,y=m_plaus1, type = "l")
-
 all.equal(m_plaus, m_plaus1)
 ```
 ]
