@@ -1,0 +1,234 @@
+---
+title: "Bayesian Analysis and Decision Theory (BADT)" # not visible
+subtitle: "Session 2"
+author: "Dmytro Perepolkin"
+institute: "Lund University"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    chakra: libs/remark-latest.min.js
+    css: xaringan-themer.css
+    seal: false
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      slideNumberFormat: "%current%"
+      ratio: '16:9'
+---
+
+```{css, echo = FALSE}
+.title-slide .remark-slide-number {
+  display: none;
+}
+```
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(RefManageR)
+library(fontawesome)
+library(tidyverse)
+library(details)
+```
+
+```{r xaringan-extra-all-the-things, echo=FALSE}
+library(xaringanExtra)
+xaringanExtra::use_xaringan_extra(
+  c("tile_view", "panelset", "editable", 
+    "animate", "tachyons")
+)
+
+xaringanExtra::use_tachyons()
+
+xaringanExtra::use_extra_styles(
+  hover_code_line = TRUE,         #<<
+  mute_unhighlighted_code = TRUE  #<<
+)
+
+xaringanExtra::use_logo("fig/bl_logo.png",
+                        link_url = "https://www.lucs.lu.se/bayes/",
+                        position=css_position(top = "2em", right = "2em"))
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(base_color = "#2a3990",
+  header_font_google = google_font("Josefin Sans"),
+  text_font_google   = google_font("Montserrat", "300", "300i"),
+  code_font_google   = google_font("Fira Mono")
+)
+```
+
+
+.h1.f-headline.fw1[
+Bayesian Analysis
+]
+
+.h2.f-subheadline.lh-title[
+and Decision Theory
+]
+<br><br>
+.f1[
+Conjugate and linear models
+]
+
+.f3[
+NAMV005<br>
+Lund 2022
+]
+---
+# Course content
+
+|Topic|Format| Date |
+|-----|------|------|
+| Introduction to Bayesian inference and subjective probability <br> Conjugate models| Review <br> Lecture | 17 Jan 2022 |
+| Conjugate models (review and exercises) <br> Modern Bayesian analysis with MCMC | Review <br> Lecture | 24 Jan 2022 |
+| Modern Bayesian analysis with MCMC (review and exercises) <br> Hierarchical models | Review <br> Lecture | 31 Jan 2022 |
+| Hierarchical models (review and exercises) <br> Decision theory <br> Literature seminar | Review <br> Lecture <br> Seminar | 07 Feb 2022 |
+
+---
+# Recap
+
+1. Logical probability ("degree of plausibility" intepretation)
+1. Urn drawing with "garden of forking data"
+ - for each possible explanation of the data
+ - Count all the ways the data can happen
+ - Explanations with more ways to produce data are more plausible
+1. Globe-tossing problem. Binomial model to find out proportion of water on the planet
+1. Grid approximation to calculate posterior density (relative plausibility) at fixed (discretized hypotheses)
+
+--
+
+## Today
+
+1. Conjugate models. Globe tossing with beta-binomial model. When you don't need to approximate
+1. Linear models. Gaussian model assumptions.
+1. Live coding:
+  - Introduction to `brms` and the first model
+  - Peeking under the hood. Our own first program in Stan.
+  - Data wrangling and visualization of posterior draws.
+
+---
+# Conjugate models
+
+Wikipedia: Beta distribution https://en.wikipedia.org/wiki/Beta_distribution
+
+When we use Beta prior with Binomial likelihood the posterior is also a Beta distribution. This property is called "conjugacy", introduced by Raiffa & Schlaifer (2000), first edition published in 1961. https://en.wikipedia.org/wiki/Conjugate_prior
+
+**Question**
+
+How would you describe the typical behavior of a $Beta(\alpha, \beta)$ variable $\pi$ when $\alpha=\beta$?
+
+Using the same options as above, how would you describe the typical behavior of a $Beta(\alpha, \beta)$ variable $\pi$ when $\alpha>\beta$?
+
+For which model is there greater variability in the plausible values of  $\pi$, $Beta(20,20)$ or $Beta(5,5)$?
+
+$$E(\pi)=\frac{\alpha}{\alpha+\beta} \\ 
+Mode(\pi)=\frac{\alpha-1}{\alpha+\beta-2}\\
+Var(\pi)=\frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)}$$
+---
+# Comparing to conjugate model solution
+
+For conjugate models posterior hyperparameters can be found in closed form. For Beta-Binomial:
+
+$$\alpha+\sum_{i=1}^{n} x_{i},\quad \beta+\sum_{i=1}^{n} N_{i}-\sum_{i=1}^{n} x_{i}$$
+In our globe tossing example we have a single datapoint $N=9$, $x=6$. Therefore if our prior is $Beta(3,1)$ the posterior should be $Beta(3+6, 1+9-6)$ or $Beta(9,4)$. Lets compare it to grid-approximated solution.
+.pull-left[
+```{r beta-conj-code, eval=FALSE}
+library(tidyverse)
+n <- 1e2
+p_grid <- seq(0,1, length.out=n)
+prob_p <- dbeta(p_grid,3,1)
+
+prob_data <- dbinom(6, size=9, prob = p_grid)
+posterior <- prob_data*prob_p
+posterior <- posterior/sum(posterior)
+
+posterior_a <- dbeta(p_grid, 9, 4)
+posterior_a <- posterior_a/sum(posterior_a)
+
+plot(p_grid, posterior, type="l")
+lines(p_grid, posterior_a, lty=2, lwd=2, col="firebrick")
+```
+]
+.pull-right[
+```{r beta-conj-run, ref.label="beta-conj-code", echo=FALSE, fig.width=5, fig.height=5}
+
+```
+]
+
+---
+background-image: url(https://earthsky.org/upl/2012/11/retrograde-motion-mars-july200-February2006-Tunc-Tezel.jpg)
+background-size: 20% 25%
+background-position: 90% 10%
+
+# Geocentrism 
+
++ Descriptively accurate
++ Mechanistically wrong
++ General method of approximation
++ Known to be wrong (Taken too seriously?)
+
+## Linear Regression
+
++ Model for **mean** and **variance** of a variable (as a weighted sum of other variables)
++ Many fancy names (ANOVA, t-test, ANCOVA, MANOVA, etc)
++ Normal distribution for error term (summed fluctuations) 
++ Estimated with least squares
++ Variable itself does not have to be normally distributed
+
+$$y_i \sim Normal(\mu_i, \sigma)\\
+\mu_i=\alpha+\beta x_i$$
+
+Each x value has a diferent expectation, $E(y|x) = \mu$
+
+---
+background-image: url(https://www.andrewheiss.com/blog/2021/11/10/ame-bayes-re-guide/chelsea-meme.jpg)
+background-size: 30%
+background-position: 90% 80%
+
+# General brms syntax
+.pull-left[
+Borrowing multilevel formula syntax from [`lme4`](https://rpsychologist.com/r-guide-longitudinal-lme-lmer).
+
+```
+response | aterms ~ pterms + (gterms|group)
+```
+
+where `pterms` is population-level effects (same across observations),
+`gterms` is group-level effects varying across (one or more, possibly nested) grouping variables specified by `group`. Optional `aterms` provide opportunity to specify additional information about the response  variable useful in meta-analysis, as well as in modeling censored or truncated data. See Buerkner(2017) for details.
+
+Also `1` means intercept and `0` means, explicitly, no intercept. 
+
+See `?brmsformula` to learn more.
+## Lets get coding!
+]
+---
+# References
+
+Acree MC. 2021. The Myth of Statistical Inference [Internet]. Cham: Springer International Publishing; [accessed 2022 Jan 6]. https://doi.org/10.1007/978-3-030-73257-8
+
+Bürkner P-C. 2017. Advanced Bayesian Multilevel Modeling with the R Package brms. arXiv:170511123 [stat] [Internet]. [accessed 2022 Jan 23]. http://arxiv.org/abs/1705.11123
+
+Clayton A. 2021. Bernoulli’s fallacy: statistical illogic and the crisis of modern science. New York: Columbia University Press.
+
+McElreath R. 2020. Statistical Rethinking: A Bayesian Course with Examples in R and Stan [Internet]. 2nd ed. New York, NY: Chapman and Hall/CRC; [accessed 2020 May 3]. https://doi.org/10.1201/9780429029608
+
+Raiffa H, Schlaifer R. 2000. Applied statistical decision theory. Wiley classics library ed. New York: Wiley.
+
+Sahlin N-E. 1990. The philosophy of FP Ramsey. [place unknown]: Cambridge University Press.
+
+
+
+
+
+---
+
+class: center, middle
+
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](https://yihui.org/knitr/), and [R Markdown](https://rmarkdown.rstudio.com).
