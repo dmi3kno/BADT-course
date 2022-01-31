@@ -263,7 +263,7 @@ Unpooled model:
 .pull-right[
 ```{r cherry50_unpooled_mod_code, eval=FALSE}
 cherry50_unpooled_mod <- brms::brm(
-  time ~ name_yob - 1, data = cherry50,
+  time ~ 0+name_yob, data = cherry50,
   family = gaussian(), refresh=0,
   prior=c(
     prior(normal(85, 10), class=b),
@@ -518,6 +518,22 @@ colnames(predict_2009_race) <- athletes
 
 predict_2009_race %>% as_draws_matrix() %>% mcmc_areas(prob = 0.8) 
 ```
+
+---
+# Summary
+
+Pick your model
+
+- Pooled model: `time~1`
+- Unpooled model: `time~0+name_yob`
+- Partially pooled (hierarchical model): `time ~ (1|name_yob)`
+
+With predictors
+
+- Regression (no hierarchical structure): `time~1+age`
+- Pooled model: `time~age`
+- Varying intercepts: `time ~ age + (1|name_yob)`
+- Varying slopes and intercepts: `time ~ age + (age|name_yob)`
 
 
 ---

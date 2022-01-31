@@ -12,7 +12,7 @@
     <link href="libs/tachyons/tachyons.min.css" rel="stylesheet" />
     <link href="libs/panelset/panelset.css" rel="stylesheet" />
     <script src="libs/panelset/panelset.js"></script>
-    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"f6e0cb3f7b53413ab76d7ad10489895a","expires":14}</script>
+    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"a59673b4cbc2417a9724cea92e755756","expires":14}</script>
     <script src="libs/himalaya/himalaya.js"></script>
     <script src="libs/js-cookie/js.cookie.js"></script>
     <link href="libs/editable/editable.css" rel="stylesheet" />
@@ -275,7 +275,7 @@ Unpooled model:
 
 ```r
 cherry50_unpooled_mod &lt;- brms::brm(
-  time ~ name_yob - 1, data = cherry50,
+  time ~ 0+name_yob, data = cherry50,
   family = gaussian(), refresh=0,
   prior=c(
     prior(normal(85, 10), class=b),
@@ -512,6 +512,22 @@ predict_2009_race %&gt;% as_draws_matrix() %&gt;% mcmc_areas(prob = 0.8)
 ```
 
 ![](03-BADT-mixed_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+
+---
+# Summary
+
+Pick your model
+
+- Pooled model: `time~1`
+- Unpooled model: `time~0+name_yob`
+- Partially pooled (hierarchical model): `time ~ (1|name_yob)`
+
+With predictors
+
+- Regression (no hierarchical structure): `time~1+age`
+- Pooled model: `time~age`
+- Varying intercepts: `time ~ age + (1|name_yob)`
+- Varying slopes and intercepts: `time ~ age + (age|name_yob)`
 
 
 ---
