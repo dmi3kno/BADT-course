@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Bayesian Analysis and Decision Theory (BADT)</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Dmytro Perepolkin" />
+    <meta name="date" content="2022-01-31" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/tile-view/tile-view.css" rel="stylesheet" />
+    <script src="libs/tile-view/tile-view.js"></script>
+    <link href="libs/animate.css/animate.xaringan.css" rel="stylesheet" />
+    <link href="libs/tachyons/tachyons.min.css" rel="stylesheet" />
+    <link href="libs/panelset/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset/panelset.js"></script>
+    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"f6e0cb3f7b53413ab76d7ad10489895a","expires":14}</script>
+    <script src="libs/himalaya/himalaya.js"></script>
+    <script src="libs/js-cookie/js.cookie.js"></script>
+    <link href="libs/editable/editable.css" rel="stylesheet" />
+    <script src="libs/editable/editable.js"></script>
+    <link href="libs/xaringanExtra-extra-styles/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.title-slide .remark-slide-number {
+  display: none;
+}
+&lt;/style&gt;
+
+<div>
+<style type="text/css">.xaringan-extra-logo {
+width: 110px;
+height: 128px;
+z-index: 0;
+background-image: url(fig/bl_logo.png);
+background-size: contain;
+background-repeat: no-repeat;
+position: absolute;
+top:2em;right:2em;
+}
+</style>
+<script>(function () {
+  let tries = 0
+  function addLogo () {
+    if (typeof slideshow === 'undefined') {
+      tries += 1
+      if (tries < 10) {
+        setTimeout(addLogo, 100)
+      }
+    } else {
+      document.querySelectorAll('.remark-slide-content:not(.title-slide):not(.inverse):not(.hide_logo)')
+        .forEach(function (slide) {
+          const logo = document.createElement('a')
+          logo.classList = 'xaringan-extra-logo'
+          logo.href = 'https://www.lucs.lu.se/bayes/'
+          slide.appendChild(logo)
+        })
+    }
+  }
+  document.addEventListener('DOMContentLoaded', addLogo)
+})()</script>
+</div>
+
+
+
+
+
+.h1.f-headline.fw1[
+Bayesian Analysis
+]
+
+.h2.f-subheadline.lh-title[
+and Decision Theory
+]
+&lt;br&gt;&lt;br&gt;
+.f1[
+Mixed (hierarchical) models
+]
+
+.f3[
+NAMV005&lt;br&gt;
+Lund 2022
+]
+---
+# Course content
+
+|Topic|Format| Date |
+|-----|------|------|
+| Introduction to Bayesian inference and subjective probability &lt;br&gt; Conjugate models| Review &lt;br&gt; Lecture | 17 Jan 2022 |
+| Conjugate models (review and exercises) &lt;br&gt; Modern Bayesian analysis with MCMC | Review &lt;br&gt; Lecture | 24 Jan 2022 |
+| Modern Bayesian analysis with MCMC (review and exercises) &lt;br&gt; Hierarchical models | Review &lt;br&gt; Lecture | 31 Jan 2022 |
+| Hierarchical models (review and exercises) &lt;br&gt; Decision theory &lt;br&gt; Literature seminar | Review &lt;br&gt; Lecture &lt;br&gt; Seminar | 07 Feb 2022 |
+
+---
+# Recap
+
+1. Conjugate models. Globe tossing with beta-binomial model
+1. Linear models. Gaussian model assumptions
+  - Introduction to `brms` and the first model
+  - Peeking under the hood. Our own first program in Stan.
+  - Data wrangling and visualization of posterior draws.
+
+--
+
+## Today
+
+1. Mixed models. Repeated measurements / hierarchical data.
+1. Pooling. 
+1. Normal hierarchical model and beyond.
+1. Adding more layers
+
+---
+# Mixed models
+
+Up until now we worked under the iid data assumption. Sometimes samples in the data may not be independent because:
++ several measurements were collected from the same individual (repeated measurement data), or
++ surveyed individuals share some characteristics (e.g. group membership): pupils in class, athletes in clubs, citizens in countries, etc.
+
+
+```r
+cherry50 &lt;- read_csv("data/mdsr_cherry50.csv")
+cherry50
+```
+
+```
+## # A tibble: 461 × 8
+##    name_yob             age sex    year previous nruns gun_time  time
+##    &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;dbl&gt;
+##  1 bennett beach 1950    49 M      1999        0     9 TRUE      77.4
+##  2 bennett beach 1950    50 M      2000        1     9 FALSE     63.5
+##  3 bennett beach 1950    52 M      2002        2     9 FALSE     67.3
+##  4 bennett beach 1950    53 M      2003        3     9 FALSE     62.1
+##  5 bennett beach 1950    54 M      2004        4     9 FALSE     65.2
+##  6 bennett beach 1950    55 M      2005        5     9 FALSE     70.1
+##  7 bennett beach 1950    56 M      2006        6     9 FALSE     72.9
+##  8 bennett beach 1950    57 M      2007        7     9 TRUE      76.7
+##  9 bennett beach 1950    58 M      2008        8     9 TRUE      93.7
+## 10 bernard kelly 1956    43 M      1999        0    10 TRUE      89.7
+## # … with 451 more rows
+```
+
+
+
+
+
+---
+# Complete pooling
+.pull-left[
+
+```r
+ggplot(cherry50, aes(x=age, y=time))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  theme_minimal()
+```
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+]
+.pull-right[
+Let's fit the simple Bayesian linear model
+`$$\begin{aligned}Y_i&amp;\sim Normal(\mu_i, \sigma)\\
+\mu_i&amp;=\beta_0 + \beta_1X_i
+\end{aligned}$$`
+
+
+```r
+pooled_mod &lt;- 
+ brm(time~1+age, data=cherry50,
+  family=gaussian(), refresh=0, silent=1,
+  prior=c(
+   prior(normal(0, 2.5), class=Intercept),
+   prior(normal(0,2.5), class=b),
+   prior(exponential(1), class=sigma)))
+pooled_mod
+```
+
+
+
+
+
+]
+---
+# To pool or not to pool?
+.pull-left[
+
+```r
+cherry50 %&gt;% 
+  ggplot(aes(x=age, y=time, group=name_yob))+
+  geom_smooth(method = "lm", se=FALSE, 
+              color="grey50", size=0.5)+
+  geom_abline(data=summarise_draws(pooled_mod), 
+              aes(intercept = mean[1], 
+                  slope=mean[2]), 
+              color="blue")+
+  theme_minimal()
+```
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+]
+.pull-right[
+Hierarchy in the data:
++ all runners (not only in our data)
++ sample of 50 runners in the `cherry50` dataset
+
+Two sources of variability:
++ within-group 
++ between-group 
+]
+---
+# Pooled model (no predictors)
+
+`$$\begin{gathered}Y_{ij}\sim Normal(\mu, \sigma) \\
+\mu \sim Normal(0,25)\\
+\sigma \sim Exponential(1)
+\end{gathered}$$`
+
+
+```r
+cherry50_pooled_mod &lt;- 
+  brms::brm(time~1, data=cherry50, 
+            family = gaussian(), refresh=0,
+            prior=c(
+              prior(normal(0,25), class=Intercept), #assuming centering
+              prior(exponential(1), class=sigma)))
+cherry50_pooled_mod
+```
+
+
+
+
+
+---
+# Pooled model (no predictors)
+
+`$$\begin{gathered}Y_{ij}\sim Normal(\mu, \sigma) \\
+\mu \sim Normal(0,25)\\
+\sigma \sim Exponential(1)
+\end{gathered}$$`
+
+
+```r
+cherry50_means &lt;- cherry50 %&gt;% group_by(name_yob) %&gt;% 
+  summarise(age=mean(age), time=mean(time)) %&gt;% arrange(time)
+
+cherry50_means_predictions &lt;- posterior_predict(cherry50_pooled_mod, newdata=cherry50_means)
+ppc_intervals(cherry50_means$time, yrep = cherry50_means_predictions, prob_outer = 0.8)+
+  scale_x_continuous(labels=cherry50_means$name_yob, breaks = seq_len(nrow(cherry50_means)))+
+  xaxis_text(angle=90, hjust=1)
+```
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+# No pooling model
+.pull-left[
+`$$\begin{gathered}Y_{ij}\sim Normal(\mu_j, \sigma)\\
+\mu_j \sim Normal(85, s_j)\\
+\sigma \sim Exp(1)
+\end{gathered}$$`
+
+Unpooled model:
++ ignores information about about the running times of one athlete in predicting the running time of another
++ can not generalize beyond the runners in the sample.
+
+![](fig/spotify-hierarchy-model-vis-1-1.png)
+]
+
+.pull-right[
+
+```r
+cherry50_unpooled_mod &lt;- brms::brm(
+  time ~ name_yob - 1, data = cherry50,
+  family = gaussian(), refresh=0,
+  prior=c(
+    prior(normal(85, 10), class=b),
+    prior(exponential(1), class=sigma)))
+cherry50_unpooled_mod
+```
+
+
+
+
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+]
+
+---
+# Hierarchical model
+
+`$$\begin{gathered}
+Y_{ij} \sim Normal(\mu_j, \sigma_y)\\
+\mu_j \sim Normal(\mu, \sigma_\mu)\\
+\mu \sim Normal(85,10)\\
+\sigma_y \sim Exponential(0.5)\\
+\sigma_\mu \sim Exponential(1)
+\end{gathered}$$`
+
+Layer 1: `\(Y_{ij}|\mu_j,\sigma_y\)` - models how running times vary *within* the runner `\(j\)` results
+  - `\(\mu_j\)` is the mean running time for athlete `\(j\)` and
+  - `\(\sigma_y\)` is the within-group variability, i.e. the standard deviation of running times from year to year within a single athlete. It is assumed to be the same for every athlete.
+
+Layer 2: `\(\mu_j|\mu, \sigma_\mu\)` - models how the typical running time `\(\mu_j\)` varies *between* the athletes
+  - `\(\mu\)` is global average of the running times `\(\mu_j\)` across all athletes `\(j\)` and
+  - `\(\sigma_\mu\)` is between-group variability, i.e SD of the mean running times `\(\mu_j\)` varyingfrom athlete to athlete
+
+Layer 3: `\(\mu, \sigma_y, \sigma_\mu\)` - prior model for shared (global) parameters
+  - global parameters `\(\mu, \sigma_y\)` and `\(\sigma_\mu\)` shared by all Cherry Blossom Race athletes
+
+---
+# Hierarchical model
+
+`$$\begin{gathered}
+Y_{ij} \sim Normal(\mu_j, \sigma_y)\\
+\mu_j \sim Normal(\mu, \sigma_\mu)\\
+\mu \sim Normal(85,10)\\
+\sigma_y \sim Exponential(0.5)\\
+\sigma_\mu \sim Exponential(1)
+\end{gathered}$$`
+
+This model has a name: (one-way) "ANOVA" (ah! no! wow!), because the variance (within-group and between-group) is split. 
+
+Another way to think about the athlete-specific mean parameter `\(\mu_j\)` is in terms of "individual adjustments" `\(b_j\)` to the global mean `\(\mu\)`. 
+
+`$$\begin{gathered}
+Y_{ij} \sim Normal(\mu_j, \sigma_y)\\
+\mu_j = \mu + b_j\\
+b_j \sim Normal(0, \sigma_\mu)\\
+\dots
+\end{gathered}$$`
+
+The two forms of this model are equivalent. 
+
+---
+# Hierarchical model
+
+
+```r
+#get_prior(time ~ (1|name_yob), family = gaussian(), data=cherry50)
+cherry50_hi_mod &lt;- brms::brm(
+  time ~ (1|name_yob), data=cherry50,
+  family = gaussian(), refresh=0,
+  prior=c(prior(normal(85,10), class=Intercept),
+          prior(exponential(1), class=sd),
+          prior(exponential(0.5), class=sigma)),
+  iter = 5000, seed=42)
+cherry50_hi_mod
+```
+
+
+
+
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+# Adding predictors
+.pull-left[
+Complete pooling model for running time dependent on age.
+
+`$$\begin{gathered}
+Y_{ij} \sim Normal(\mu_i, \sigma)\\
+\mu_i=\beta_0+\beta_1X_{ij}\\
+\beta_0 \sim Normal(0,35)\\
+\beta_1\sim Normal(0,15)\\
+\sigma\sim Exponential(1)
+\end{gathered}$$`
+
+
+```r
+#get_prior(time~age, data=cherry50)
+cherry50_age_pooled_mod &lt;- brms::brm(
+  time~age, data=cherry50,
+  family = gaussian(), refresh=0,
+  prior=c(prior(normal(0,35), class=Intercept),
+          prior(normal(0,15), class=b),
+          prior(exponential(1), class=sigma)))
+cherry50_age_pooled_mod
+```
+
+
+
+
+]
+
+.pull-right[
+
+```r
+pp_check(cherry50_age_pooled_mod)
+```
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+
+```r
+tidy(cherry50_age_pooled_mod, effects =  "fixed", 
+     conf.int = TRUE, conf.level = 0.80)
+# also try effects = "ran_pars" or "ran_vals"
+```
+
+]
+
+---
+# Varying intercepts
+
+.pull-left[
+`$$\begin{gathered}
+Y_{ij}\sim Normal(\mu_{ij}, \sigma_y)\\
+\mu_{ij}=\beta_{0j}+\beta_1X_{ij}\\
+\beta_{0j} \sim Normal(\beta_0, \sigma_0)\\
+\beta_0 \sim Normal(100,10)\\
+\beta_1 \sim Normal(2.5, 1)\\
+\sigma_y \sim Exponential(0.5)\\
+\sigma_0 \sim Exponential(1)
+\end{gathered}$$`
+
+
+```r
+cherry50_age_vi_mod &lt;- brms::brm(
+  time ~ age + (1|name_yob), data=cherry50,
+  family = gaussian(), refresh=0,
+  prior=c(
+    prior(normal(100,10), class=Intercept),
+    prior(normal(2.5,1), class=b),
+    prior(exponential(0.5), class=sigma),
+    prior(exponential(1), class=sd)
+  ), iter = 5000, seed=42)
+cherry50_age_vi_mod
+```
+
+
+
+
+
+]
+
+.pull-right[
+**Layer 1**: Variability within the runner. Note that parameters `\(\beta_1\)` and `\(\sigma_y\)` are shared. **Layer 2**: Variability between the runners. Note that both `\(\beta_0\)` and `\(\sigma_0\)` are shared.
+
+
+```r
+add_epred_draws(cherry50, cherry50_age_vi_mod, ndraws = 2) %&gt;% 
+  ggplot(aes(x = age, y = time)) +
+    geom_line(aes(y = .epred, group = paste(name_yob, .draw))) + 
+    facet_wrap(vars(.draw)) + theme_minimal()
+```
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+]
+
+---
+# Variable slope and intercept
+.pull-left[
+`$$\begin{gathered}
+Y_{ij}\sim Normal(\mu_{ij}, \sigma_y)\\
+\mu_{ij}=\beta_{0j}+\beta_{1j}X_{ij}\\
+\dbinom{\beta_{0j}}{\beta_{1j}}\sim Normal\left(\dbinom{\beta_0}{\beta_1}, \Sigma\right)\\
+\beta_0 \sim Normal(100,10)\\
+\beta_1 \sim Normal(2.5, 1)\\
+\sigma_y \sim Exponential(0.5)\\
+\Sigma \sim LKJ(1)
+\end{gathered}$$`
+
+
+```r
+#get_prior(time ~ age + (age|name_yob), data=cherry50)
+cherry50_age_vsi_mod &lt;- brms::brm(
+  time ~ age + (age|name_yob), data=cherry50,
+  family = gaussian(), refresh=0,
+  prior=c(
+    prior(normal(100,10), class=Intercept),
+    prior(normal(2.5,1), class=b),
+    prior(exponential(0.5), class=sigma),
+    prior(exponential(1), class=sd),
+    set_prior("lkj(1)", class="cor")
+  ), iter = 5000, seed=42)
+cherry50_age_vsi_mod
+```
+
+
+
+
+
+]
+.pull-right[
+- Runner-specific *intercept* `\(\beta_{0j}\)` and *slope* `\(\beta_{1j}\)` work together describing the model for the runner `\(j\)`, hence they are correlated. We represent them with joint Normal model `\(\dbinom{\beta_{0j}}{\beta_{1j}}\)`, with some global mean `\(\dbinom{\beta_{0}}{\beta_{1}}\)` and global covariabce 
+`$$\Sigma=\left(\begin{matrix} \sigma_0 &amp; \rho\sigma_0\sigma_1\\ \rho\sigma_0\sigma_1 &amp; \sigma_1 \end{matrix}\right)$$`
+
+Distribution of covariance matrices can be modeled with LKJ prior (decomposition of covariance). See Section 17.3.2 in the book for details (Johnson et al, 2022).
+]
+
+---
+#Posterior predictions
+
+
+```r
+# Simulate posterior predictive models for the 3 runners
+set.seed(42)
+athletes &lt;- c("bill rodgers 1948", "dmytro perepolkin",  "carol lavrich 1956")
+predict_2009_race &lt;- posterior_predict(cherry50_age_vsi_mod, 
+  newdata = data.frame(name_yob = athletes, age = c(61, 60, 53)),
+  allow_new_levels = TRUE
+)
+colnames(predict_2009_race) &lt;- athletes
+
+predict_2009_race %&gt;% as_draws_matrix() %&gt;% mcmc_areas(prob = 0.8) 
+```
+
+![](03-BADT-mixed_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+
+
+---
+# References
+
+Acree MC. 2021. The Myth of Statistical Inference [Internet]. Cham: Springer International Publishing; [accessed 2022 Jan 6]. https://doi.org/10.1007/978-3-030-73257-8
+
+Bürkner P-C. 2017. Advanced Bayesian Multilevel Modeling with the R Package brms. arXiv:170511123 [stat] [Internet]. [accessed 2022 Jan 23]. http://arxiv.org/abs/1705.11123
+
+Clayton A. 2021. Bernoulli’s fallacy: statistical illogic and the crisis of modern science. New York: Columbia University Press.
+
+Johnson AA, Ott MQ, Dogucu M. 2022. Bayes rules! an introduction to Bayesian modeling with R. Boca Raton: CRC Press.
+
+McElreath R. 2020. Statistical Rethinking: A Bayesian Course with Examples in R and Stan [Internet]. 2nd ed. New York, NY: Chapman and Hall/CRC; [accessed 2020 May 3]. https://doi.org/10.1201/9780429029608
+
+Raiffa H, Schlaifer R. 2000. Applied statistical decision theory. Wiley classics library ed. New York: Wiley.
+
+Sahlin N-E. 1990. The philosophy of FP Ramsey. [place unknown]: Cambridge University Press.
+
+
+
+---
+
+class: center, middle
+
+# Thanks!
+
+Slides created via the R package [**xaringan**](https://github.com/yihui/xaringan).
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](https://yihui.org/knitr/), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="libs/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"slideNumberFormat": "%current%",
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
